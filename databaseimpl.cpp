@@ -81,7 +81,7 @@ QString DatabaseImpl::getDbVersion (QString rConnName)
 
   if (query.exec())
   {
-    dbVersion = query.value(0).toString();
+    dbVersion = query.value(1).toString();
   }
   else
   {
@@ -161,7 +161,35 @@ bool DatabaseImpl::update ()
 
 bool DatabaseImpl::updateDevToDbVer_1_0 ()
 {
-  return false;
+  QSqlQuery query (QSqlDatabase::database(getConnectionName ()));
+  bool retVal = false;
+
+  //retVal = query.exec ("CREATE TABLE IF NOT EXISTS dbInfo (id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, dbVersion BLOB)");
+  retVal = query.exec ("CREATE TABLE IF NOT EXISTS dbInfo (dbVersion BLOB)");
+
+  if (retVal)
+  {
+    std::cout << "Tabelle zum Ablegen der aktuellen Datenbankversion angelegt.\n";
+    query.prepare("UPDATE dbInfo SET dbVersion = :version");
+    query.bindValue(":version", "1.0");
+    query.exec();
+
+    if (retVal)
+    {
+      std::cout << "Datenbankversion 1.0 in Datenbank gespeichert.\n";
+    }
+    else
+      std::cout << "Datenbankversion konnte nicht in Datenbank abgelegt werden.\n";
+
+  }
+  else
+  {
+    std::cout << "Create Table fail\n";
+    std::cout << query.lastError().databaseText().toStdString();
+    std::cout << query.lastError().driverText().toStdString();
+  }
+
+  return retVal;
 }
 
 DatabaseImpl::~DatabaseImpl(void)
